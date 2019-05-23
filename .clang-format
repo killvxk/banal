@@ -1,0 +1,18 @@
+---
+BasedOnStyle: Google
+---
+Language: Cpp
+SortUsingDeclarations: true
+SortIncludes: true
+SpacesInAngles: true
+AccessModifierOffset: -2
+DerivePointerAlignment: false
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Inline
+BinPackParameters: false
+BinPackArguments: false
+PenaltyBreakBeforeFirstCallParameter: 5000
+PenaltyReturnTypeOnItsOwnLine: 500
+SpacesBeforeTrailingComments: 1
+---
