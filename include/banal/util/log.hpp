@@ -91,7 +91,7 @@ namespace log {
 ///
 /// \param args Stuffs
 template < typename... Options >
-void log(Options... args) {
+void log(const Options&... args) {
   ((::std::cerr << args), ...);
   ::std::cerr << ::std::endl;
 }
@@ -99,7 +99,7 @@ void log(Options... args) {
 #else
 /// \brief Log stuffs (empty, NDEBUG)
 template < typename... Options >
-void log(Options...) {}
+void log(Options&...) {}
 
 #endif // ndef NDEBUG
 

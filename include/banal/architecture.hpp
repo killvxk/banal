@@ -11,6 +11,7 @@
 #include <string_view>
 #include <utility>
 
+#include "banal/conf.hpp"
 #include "banal/extern/capstone.hpp"
 #include "banal/extern/unicorn.hpp"
 #include "banal/util/log.hpp"
@@ -20,8 +21,8 @@ namespace banal {
 /// \brief Supported architecture
 enum Architecture {
   X86,    ///< Intel X86 (32 bits)
-  X86_64, ///< Intel X86 (64 bits)
   ARM,    ///< ARM (32 bits)
+  X86_64, ///< Intel X86 (64 bits)
   AArch64 ///< ARM (64 bits)
 };
 
@@ -105,6 +106,20 @@ inline ::std::pair< ::uc_arch, ::uc_mode > get_uc_architecture(Architecture a) {
       return {::UC_ARCH_ARM64, ::UC_MODE_ARM};
     default: {
       log::unreachable("unreachable");
+    }
+  }
+}
+
+inline bool is_architecture_size_supported(Architecture a) {
+  switch (a) {
+    case Architecture::X86:
+    case Architecture::ARM:
+      return (sizeof(uintarch_t) == 4);
+    case Architecture::X86_64:
+    case Architecture::AArch64:
+      return (sizeof(uintarch_t) == 8);
+    default: {
+      log::unreachable("Unreacheble");
     }
   }
 }

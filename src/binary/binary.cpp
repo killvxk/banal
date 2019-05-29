@@ -16,10 +16,14 @@
 #include <iomanip>
 #include <iostream>
 
-#include "banal/binary.hpp"
+#include "banal/binary/binary.hpp"
+#include "banal/binary/elf/elf.hpp"
 #include "banal/util/log.hpp"
 
 namespace banal {
+
+/// \brief Namespace containing all stuffs about binaries
+namespace binary {
 
 namespace {
 
@@ -32,17 +36,19 @@ void safe_close(int fd) {
 
 } // end anonymous namespace
 
-Binary::Binary(int fd, void* addr, ::std::size_t file_len)
+Binary::Binary(const Options& opt, int fd, void* addr, ::std::size_t file_len)
     : _begin(reinterpret_cast<::std::uint8_t* >(addr)),
       _end(reinterpret_cast<::std::uint8_t* >(addr) + file_len),
       _fd(fd),
-      _stream(reinterpret_cast<::std::uint8_t* >(addr), file_len) {}
+      _stream(reinterpret_cast<::std::uint8_t* >(addr), file_len),
+      _opt(opt),
+      _good(false) {}
 
-::std::unique_ptr< Binary > Binary::open(const ::std::string_view filepath) {
-  auto fd = ::open(filepath.data(), O_RDONLY);
+::std::unique_ptr< Binary > open(const ::banal::Options& opt) {
+  auto fd = ::open(opt.filepath().data(), O_RDONLY);
   if (fd == -1) {
     // Cannot open file. Abort.
-    log::cerr() << "Unable to open " << filepath << ": "
+    log::cerr() << "Unable to open " << opt.filepath() << ": "
                 << ::std::strerror(errno) << ::std::endl;
     return nullptr;
   }
@@ -50,14 +56,15 @@ Binary::Binary(int fd, void* addr, ::std::size_t file_len)
   struct stat file_stat;
   if (fstat(fd, &file_stat) != 0) {
     // Cannnot get stats about file. Abort.
-    log::cerr() << "Cannot exec fstat on " << filepath << ::std::endl;
+    log::cerr() << "Cannot exec fstat on " << opt.filepath() << ::std::endl;
     safe_close(fd);
     return nullptr;
   }
 
   if (S_ISREG(file_stat.st_mode) == 0) {
     // Not a regular file. Abort.
-    log::cerr() << "" << filepath << " is not a regular file." << ::std::endl;
+    log::cerr() << "" << opt.filepath() << " is not a regular file."
+                << ::std::endl;
     safe_close(fd);
     return nullptr;
   }
@@ -73,20 +80,39 @@ Binary::Binary(int fd, void* addr, ::std::size_t file_len)
                       fd,
                       0);
   if (addr == nullptr) {
-    log::cerr() << "Unable to map file " << filepath << ": "
+    log::cerr() << "Unable to map file " << opt.filepath() << ": "
                 << ::std::strerror(errno) << ::std::endl;
     safe_close(fd);
     return nullptr;
   }
 
-  return ::std::make_unique< Binary >(fd,
-                                      addr,
-                                      static_cast<::std::size_t >(
-                                          file_stat.st_size));
+  switch (opt.format()) {
+    case Format::ELF: {
+      ::std::unique_ptr< binary::Binary > bin =
+          ::std::make_unique< binary::ELFBinary >(opt,
+                                                  fd,
+                                                  addr,
+                                                  static_cast<::std::size_t >(
+                                                      file_stat.st_size));
+      if (bin->parse()) {
+        return bin;
+      } else {
+        return nullptr;
+      }
+    }
+    case Format::PE: {
+      log::cerr() << "PE is not supported yet" << ::std::endl;
+      return nullptr;
+    }
+    default: {
+      log::unreachable("Unreachable");
+    }
+  }
 }
 
 Binary::~Binary(void) {
   safe_close(_fd);
 }
 
+} // namespace binary
 } // end namespace banal

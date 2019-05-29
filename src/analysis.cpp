@@ -6,14 +6,124 @@
 ///
 /// Contact: thomas at bailleux.me
 
+#include <iomanip>
+#include <variant>
+
 #include "banal/analysis.hpp"
+#include "banal/execution/engine.hpp"
 
 namespace banal {
 
-Analysis::Analysis(const Options& opt, Architecture arch)
-    : _options(opt), _arch(arch), _csh(0), _uc(nullptr), _good(false) {
+namespace {
+
+[[maybe_unused]] static void dump_registers(::uc_engine* uc, Architecture a) {
+  ::std::int32_t* regs = nullptr;
+  ::std::uint64_t values[17];
+  void* rvalues[17] = {};
+  for (int i = 0; i < 17; i++) {
+    rvalues[i] = reinterpret_cast< void* >(&(values[i]));
+  }
+  int size;
+  switch (a) {
+    case Architecture::X86_64: {
+      regs = new ::std::int32_t[17]{::UC_X86_REG_RAX,
+                                    ::UC_X86_REG_RBX,
+                                    ::UC_X86_REG_RCX,
+                                    ::UC_X86_REG_RDX,
+                                    ::UC_X86_REG_RSI,
+                                    ::UC_X86_REG_RDI,
+                                    ::UC_X86_REG_RBP,
+                                    ::UC_X86_REG_RSP,
+                                    ::UC_X86_REG_R8,
+                                    ::UC_X86_REG_R9,
+                                    ::UC_X86_REG_R10,
+                                    ::UC_X86_REG_R11,
+                                    ::UC_X86_REG_R12,
+                                    ::UC_X86_REG_R13,
+                                    ::UC_X86_REG_R14,
+                                    ::UC_X86_REG_R15,
+                                    ::UC_X86_REG_RIP};
+      size = 17;
+    } break;
+    case Architecture::X86: {
+      regs = new ::std::int32_t[9]{::UC_X86_REG_EAX,
+                                   ::UC_X86_REG_EBX,
+                                   ::UC_X86_REG_ECX,
+                                   ::UC_X86_REG_EDX,
+                                   ::UC_X86_REG_ESI,
+                                   ::UC_X86_REG_EDI,
+                                   ::UC_X86_REG_EBP,
+                                   ::UC_X86_REG_ESP,
+                                   ::UC_X86_REG_EIP};
+      size = 9;
+    } break;
+    default: {
+      log::unreachable("Unreachable");
+    }
+  }
+  auto e =
+      ::uc_reg_read_batch(uc, regs, reinterpret_cast< void** >(rvalues), size);
+  if (e != ::UC_ERR_OK) {
+    log::cerr() << "Unable to dump CPU registers for " << a << ": "
+                << ::uc_strerror(e) << ::std::endl;
+    return;
+  }
+  switch (a) {
+    case Architecture::X86_64: {
+      ::std::uint64_t* v = reinterpret_cast<::std::uint64_t* >(values);
+      ::std::cout << "RAX=0x" << ::std::hex << v[0] << ::std::endl;
+      ::std::cout << "RBX=0x" << ::std::hex << v[1] << ::std::endl;
+      ::std::cout << "RCX=0x" << ::std::hex << v[2] << ::std::endl;
+      ::std::cout << "RDX=0x" << ::std::hex << v[3] << ::std::endl;
+      ::std::cout << "RSI=0x" << ::std::hex << v[4] << ::std::endl;
+      ::std::cout << "RDI=0x" << ::std::hex << v[5] << ::std::endl;
+      ::std::cout << "RBP=0x" << ::std::hex << v[6] << ::std::endl;
+      ::std::cout << "RSP=0x" << ::std::hex << v[7] << ::std::endl;
+      ::std::cout << "R8=0x" << ::std::hex << v[8] << ::std::endl;
+      ::std::cout << "R9=0x" << ::std::hex << v[9] << ::std::endl;
+      ::std::cout << "R10=0x" << ::std::hex << v[10] << ::std::endl;
+      ::std::cout << "R11=0x" << ::std::hex << v[11] << ::std::endl;
+      ::std::cout << "R12=0x" << ::std::hex << v[12] << ::std::endl;
+      ::std::cout << "R13=0x" << ::std::hex << v[13] << ::std::endl;
+      ::std::cout << "R14=0x" << ::std::hex << v[14] << ::std::endl;
+      ::std::cout << "R15=0x" << ::std::hex << v[15] << ::std::endl;
+      ::std::cout << "RIP=0x" << ::std::hex << v[16] << ::std::endl;
+    } break;
+
+    case Architecture::X86: {
+      ::std::uint32_t* v = reinterpret_cast<::std::uint32_t* >(values);
+      ::std::cout << "EAX=0x" << ::std::hex << v[0] << ::std::endl;
+      ::std::cout << "EBX=0x" << ::std::hex << v[1] << ::std::endl;
+      ::std::cout << "ECX=0x" << ::std::hex << v[2] << ::std::endl;
+      ::std::cout << "EDX=0x" << ::std::hex << v[3] << ::std::endl;
+      ::std::cout << "EDI=0x" << ::std::hex << v[4] << ::std::endl;
+      ::std::cout << "ESI=0x" << ::std::hex << v[5] << ::std::endl;
+      ::std::cout << "EBP=0x" << ::std::hex << v[6] << ::std::endl;
+      ::std::cout << "ESP=0x" << ::std::hex << v[7] << ::std::endl;
+      ::std::cout << "EIP=0x" << ::std::hex << v[8] << ::std::endl;
+    } break;
+
+    default: {
+      log::unreachable("Unreachable");
+    }
+  }
+  delete[] regs;
+}
+
+} // namespace
+
+Analysis::Analysis(const Options& opt, binary::Binary& binary)
+    : _options(opt),
+      _csh(0),
+      _uc(nullptr),
+      _binary(binary),
+      _virtual_binary_address(::std::nullopt),
+      _stack_address(::std::nullopt),
+      _stack_size(::std::nullopt),
+      _stacks(),
+      _good(false) {
   {
-    auto capstone_value = get_cs_architecture(arch);
+    auto capstone_value = get_cs_architecture(_binary.architecture());
     if (auto e = ::cs_open(capstone_value.first, capstone_value.second, &_csh);
         e != ::CS_ERR_OK) {
       log::cerr() << "Unable to initialize Capstone engine: "
@@ -26,7 +136,7 @@ Analysis::Analysis(const Options& opt, Architecture arch)
   }
 
   {
-    auto uc_value = get_uc_architecture(arch);
+    auto uc_value = get_uc_architecture(_binary.architecture());
     if (auto e = ::uc_open(uc_value.first, uc_value.second, &_uc);
         e != ::UC_ERR_OK) {
       log::cerr() << "Unable to initialize Unicorn engine: " << ::uc_strerror(e)
@@ -49,6 +159,68 @@ Analysis::~Analysis(void) {
                 << ::std::endl;
   }
   _uc = nullptr;
+}
+
+bool Analysis::set_stack(::std::uint64_t address, ::std::size_t size) {
+  if (_stack_address.has_value() && _stack_size.has_value()) {
+    log::cwarn() << "Stack is already initialized. Unmapping the old one..."
+                 << ::std::endl;
+    if (auto e = uc_mem_unmap(_uc, *_stack_address, *_stack_size);
+        e != ::UC_ERR_OK) {
+      log::cerr() << "Unable to unmap previous stack with Unicorn: "
+                  << ::uc_strerror(e) << ::std::endl;
+      return false;
+    } else {
+      log::cinfo() << "Previous stack unmaped." << ::std::endl;
+      _stack_address.reset();
+      _stack_size.reset();
+    }
+  }
+  if (auto e = ::uc_mem_map(_uc, address, size, UC_PROT_READ | UC_PROT_WRITE);
+      e != ::UC_ERR_OK) {
+    log::cerr() << "Unable to map stack address at "
+                << reinterpret_cast< void* >(address) << ", of length " << size
+                << "B: " << ::uc_strerror(e) << ::std::endl;
+    return false;
+  } else {
+    _stack_address = address;
+    _stack_size = size;
+  }
+
+  auto esp = (address + size - 0x10);
+  if (auto e = ::uc_reg_write(_uc, ::UC_X86_REG_RSP, &esp); e != ::UC_ERR_OK) {
+    log::cerr() << "Unable to set SP register: " << ::uc_strerror(e)
+                << ::std::endl;
+    return false;
+  }
+
+  return true;
+}
+
+void Analysis::start(::std::uint64_t entry) {
+  (void)entry;
+  // debug
+  _binary.dump();
+
+  execution::Engine engine(_uc, _binary);
+
+  // prepare capstone
+  ::cs_insn* insn = ::cs_malloc(_csh);
+  ::cs_free(insn, 1);
+}
+
+::std::unique_ptr< execution::Stack > Analysis::new_stack(::std::size_t size) {
+  switch (_binary.architecture()) {
+    case Architecture::X86:
+    case Architecture::ARM:
+      return std::make_unique< execution::Stack >(_uc, *_stack_address, size);
+    case Architecture::X86_64:
+    case Architecture::AArch64:
+      return std::make_unique< execution::Stack >(_uc, *_stack_address, size);
+    default: {
+      log::unreachable("Unreachable");
+    }
+  }
 }
 
 } // end namespace banal

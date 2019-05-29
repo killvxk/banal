@@ -33,37 +33,16 @@ static ::llvm::cl::opt<::std::string > InputFilename(
 static ::llvm::cl::list<::std::string > Argv(
     ::llvm::cl::ConsumeAfter, ::llvm::cl::desc("<program arguments>..."));
 
-/// \brief The architecture
-static ::llvm::cl::opt< Architecture > Arch(
-    "a",
-    ::llvm::cl::Optional,
-    ::llvm::cl::desc("Force architecture, using:"),
-    ::llvm::cl::values(
-        clEnumValN(Architecture::X86,
-                   get_architecture_short_name(Architecture::X86).data(),
-                   get_architecture_long_name(Architecture::X86).data()),
-        clEnumValN(Architecture::X86_64,
-                   get_architecture_short_name(Architecture::X86_64).data(),
-                   get_architecture_long_name(Architecture::X86_64).data()),
-        clEnumValN(Architecture::ARM,
-                   get_architecture_short_name(Architecture::ARM).data(),
-                   get_architecture_long_name(Architecture::ARM).data()),
-        clEnumValN(Architecture::AArch64,
-                   get_architecture_short_name(Architecture::AArch64).data(),
-                   get_architecture_long_name(Architecture::AArch64).data())),
-    ::llvm::cl::cat(MainCategory));
-
 /// \brief The format
-static ::llvm::cl::opt< format::Format > Format(
+static ::llvm::cl::opt< Format > Formatt(
     "f",
     ::llvm::cl::Required,
     ::llvm::cl::desc("Executable format:"),
-    ::llvm::cl::values(clEnumValN(format::Format::ELF,
-                                  format::str(format::Format::ELF).data(),
-                                  format::str(format::Format::ELF).data()),
-                       clEnumValN(format::Format::PE,
-                                  format::str(format::Format::PE).data(),
-                                  format::str(format::Format::PE).data())),
+    ::llvm::cl::values(
+        clEnumValN(Format::ELF,
+                   str(Format::ELF).data(),
+                   str(Format::ELF).data()),
+        clEnumValN(Format::PE, str(Format::PE).data(), str(Format::PE).data())),
     ::llvm::cl::cat(MainCategory));
 
 /// @}
@@ -90,7 +69,6 @@ static ::llvm::cl::OptionCategory DebugCategory("Debug Options");
 
 Options::Options(int argc, char** argv)
     : _filepath(),
-      _arch(::std::nullopt),
       _format(::std::nullopt),
       _argv(),
       _status(false) {
@@ -99,12 +77,7 @@ Options::Options(int argc, char** argv)
                                       "banal -- buffer overflow analysis");
 
   _filepath = InputFilename.getValue();
-  if (Arch.getPosition()) {
-    _arch = Arch;
-  } else {
-    _arch = ::std::nullopt;
-  }
-  _format = Format;
+  _format = Formatt;
   _status = true;
   _argv = Argv;
 }

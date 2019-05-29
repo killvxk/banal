@@ -7,6 +7,6 @@ int main(int argc, char **argv) {
   } else {
     puts("argc >= 5");
   }
-
+  printf("end\n");
   return 0;
 }

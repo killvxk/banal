@@ -6,6 +6,10 @@ if (POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
 endif()
 
+if (POLICY CMP0057)
+  cmake_policy(SET CMP0057 NEW)
+endif()
+
 # Add path for custom modules
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -32,18 +36,35 @@ if (NOT EXISTS "${PROJECT_SOURCE_DIR}/elfio/elfio/elfio.hpp")
 	message(FATAL_ERROR "Submodules were not downloaded. Please update submodules using git, and try again")
 endif()
 
-set(BANAL_NAME "${CMAKE_PROJECT_NAME}")
+set(ARCH_SIZES "32" "64")
+
+if(NOT ARCH_SIZE)
+  set(ARCH_SIZE "64")
+else()
+  if(NOT ARCH_SIZE IN_LIST ARCH_SIZES)
+      message(FATAL_ERROR "Architecture size are 32 or 64")
+  endif()
+endif()
+
+set(BANAL_NAME "${CMAKE_PROJECT_NAME}.${ARCH_SIZE}")
 set(BANAL_SRC_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/src")
 add_executable(${BANAL_NAME}
   ${BANAL_SRC_DIRS}/analysis.cpp
   ${BANAL_SRC_DIRS}/banal.cpp
-  ${BANAL_SRC_DIRS}/binary.cpp
-  ${BANAL_SRC_DIRS}/format/elf.cpp
-  ${BANAL_SRC_DIRS}/format/format.cpp
+  ${BANAL_SRC_DIRS}/binary/binary.cpp
+  ${BANAL_SRC_DIRS}/binary/elf/component/segment.cpp
+  ${BANAL_SRC_DIRS}/binary/elf/component/section.cpp
+  ${BANAL_SRC_DIRS}/binary/elf/elf.cpp
+  ${BANAL_SRC_DIRS}/execution/engine.cpp
+  ${BANAL_SRC_DIRS}/execution/map.cpp
+  ${BANAL_SRC_DIRS}/execution/stack.cpp
+  ${BANAL_SRC_DIRS}/format.cpp
   ${BANAL_SRC_DIRS}/options.cpp
   ${BANAL_SRC_DIRS}/util/log.cpp
   ${BANAL_SRC_DIRS}/util/mem_based_stream.cpp
 )
+target_compile_definitions(${BANAL_NAME} PUBLIC "ARCH_SIZE=${ARCH_SIZE}")
+
 target_include_directories(${BANAL_NAME} SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/elfio/")
 
 # Threads

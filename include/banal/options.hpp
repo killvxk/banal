@@ -12,8 +12,8 @@
 #include <string_view>
 #include <vector>
 
-#include "banal/arch.hpp"
-#include "banal/format/format.hpp"
+#include "banal/architecture.hpp"
+#include "banal/format.hpp"
 
 namespace banal {
 
@@ -23,11 +23,8 @@ private:
   /// \brief The file to analyze
   ::std::string_view _filepath;
 
-  /// \brief Architecture
-  ::std::optional< Architecture > _arch;
-
   /// \brief Executable format
-  ::std::optional< format::Format > _format;
+  ::std::optional< Format > _format;
 
   /// \brief Arguments vector
   ::std::vector<::std::string > _argv;
@@ -56,11 +53,6 @@ public:
   ///
   /// \return The file path to analyze
   inline auto filepath(void) const { return _filepath; }
-
-  /// \brief Get the architecture
-  ///
-  /// \return The architecture
-  inline auto arch(void) const { return _arch; }
 
   /// \brief Get the executable format
   ///

@@ -2,8 +2,7 @@
 #include <iostream>
 
 #include "banal/analysis.hpp"
-#include "banal/binary.hpp"
-#include "banal/format/format.hpp"
+#include "banal/binary/binary.hpp"
 #include "banal/options.hpp"
 
 int main(int argc, char** argv) {
@@ -12,31 +11,21 @@ int main(int argc, char** argv) {
     return 1;
   }
 
-  auto bin = ::banal::Binary::open(opt.filepath());
+  auto bin = ::banal::binary::open(opt);
   if (!bin) {
     return 1;
   }
 
-  auto parser = ::banal::format::get_parser(opt.format(), bin->stream());
-  if (!parser) {
-    return 1;
-  }
-
-  ::banal::Architecture arch;
-  arch = parser->architecture();
-  if (opt.arch() && parser->architecture() != opt.arch()) {
-    arch = *opt.arch();
-    ::banal::log::cwarn()
-        << "Architecture supplied by command line argument is not the same the "
-           "architrecture supplied by the executable. Assuming user is right, "
-           "using architecture "
-        << arch << ::std::endl;
-  }
-
-  ::banal::log::cinfo() << "Using architecture " << arch << ::std::endl;
-  ::banal::log::cinfo() << "Executable format: " << opt.format() << ::std::endl;
+  ::banal::log::cinfo() << "Using architecture " << bin->architecture()
+                        << ::std::endl;
+  ::banal::log::cinfo() << "Executable format: " << bin->format()
+                        << ::std::endl;
   ::banal::log::cinfo() << "Setting argc to " << opt.argv().size()
                         << ::std::endl;
-
-  ::banal::Analysis a(opt, arch);
+  ::banal::log::cinfo() << "Entry point: 0x" << ::std::hex << bin->entry()
+                        << ::std::endl;
+  ::banal::Analysis a(opt, *bin);
+  if (!a.set_stack(0xbffff000, 4096))
+    return 1;
+  a.start();
 }
