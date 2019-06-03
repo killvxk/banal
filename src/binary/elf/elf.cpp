@@ -28,13 +28,14 @@ ELFBinary::ELFBinary(const ::banal::Options& opt,
       _reader(),
       _segments(),
       _sections(),
-      _entry(static_cast< uintarch_t >(_reader.get_entry())),
+      _entry(0),
       _nx(true),
       _pie(true) {
   if (!_reader.load(_stream)) {
     ::banal::log::cerr() << "Unable to parse the ELF." << ::std::endl;
     return;
   }
+  _entry = static_cast< uintarch_t >(_reader.get_entry());
   _good = true;
 }
 

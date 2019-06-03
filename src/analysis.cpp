@@ -165,12 +165,48 @@ void Analysis::start(::std::uint64_t entry) {
 
   execution::Engine engine(_uc, _csh, _binary);
 
+  // set hooks
+  ::uc_cb_hookcode_t basic_block_hook = Analysis::hook_basic_block;
+  ::uc_hook hh;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
+  if (auto e = ::uc_hook_add(_uc,
+                             &hh,
+                             ::UC_HOOK_BLOCK,
+                             reinterpret_cast< void* >(basic_block_hook),
+                             static_cast< void* >(this),
+                             1,
+                             0);
+      e != ::UC_ERR_OK) {
+#pragma clang diagnostic pop
+    log::cerr() << "Unable to register hook: " << ::uc_strerror(e)
+                << ::std::endl;
+    return;
+  }
+
   // prepare capstone
   ::cs_insn* insn = ::cs_malloc(_csh);
   ::cs_free(insn, 1);
   while (engine.step()) {
     // dump_registers(_uc, _binary.architecture());
   }
+}
+
+void Analysis::hook_basic_block(::uc_engine* uc,
+                                ::std::uint64_t address,
+                                ::std::uint32_t size,
+                                void* user_data) {
+  (void)uc;
+  (void)size;
+  (void)address;
+  Analysis* self = static_cast< Analysis* >(user_data);
+  return self->hook_basic_block(static_cast< uintarch_t >(address), size);
+}
+
+void Analysis::hook_basic_block(uintarch_t address, ::std::uint32_t size) {
+  (void)size;
+  log::cinfo() << "Basic block detected on 0x" << ::std::hex << address
+               << ::std::endl;
 }
 
 } // end namespace banal

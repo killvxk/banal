@@ -56,7 +56,7 @@ public:
   Map operator=(const Map&) = delete;
 
   /// \brief Move constructor
-  Map(Map&& m) { m._mapped = false; }
+  Map(Map&& m);
 
   /// \brief Destructor
   ~Map(void);

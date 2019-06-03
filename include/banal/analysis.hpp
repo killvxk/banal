@@ -37,15 +37,6 @@ private:
   /// \brief Virtal address of the binary
   ::std::optional<::std::uint64_t > _virtual_binary_address;
 
-  /// \brief stack memory address
-  ::std::optional<::std::uint64_t > _stack_address;
-
-  /// \brief Size of stack
-  ::std::optional<::std::size_t > _stack_size;
-
-  /// \brief Stack Frame
-  ::std::vector<::std::unique_ptr< execution::Stack > > _stacks;
-
   /// \brief Tell if it is good
   bool _good;
 
@@ -81,14 +72,6 @@ public:
   /// \return true if no error occured, else false
   bool map(::std::uint64_t address);
 
-  /// \brief Set the stack
-  ///
-  /// \param address Address of the stack (bottom)
-  /// \param size Size of the stack
-  ///
-  /// \return true if no error occured, else false
-  bool set_stack(::std::uint64_t address, ::std::size_t size);
-
   /// \brief Start the analysis, beginning at the entry point given by the
   /// binary
   inline void start(void) { this->start(_binary.entry()); }
@@ -98,12 +81,16 @@ public:
   /// \param entry the analysis, at entry given by entry
   void start(::std::uint64_t entry);
 
+public:
+  /// \brief Intercept call/jmp
+  static void hook_basic_block(::uc_engine* uc,
+                               ::std::uint64_t address,
+                               ::std::uint32_t size,
+                               void* user_data);
+
 private:
-  /// \brief Get a new stack
-  ///
-  /// \return New stack
-  ::std::unique_ptr< execution::Stack > new_stack(::std::size_t size = 1024 *
-                                                                       4);
+  /// \ßrief Intercept call/jmp
+  void hook_basic_block(uintarch_t address, ::std::uint32_t size);
 };
 
 } // end namespace banal

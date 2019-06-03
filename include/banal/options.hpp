@@ -23,9 +23,6 @@ private:
   /// \brief The file to analyze
   ::std::string_view _filepath;
 
-  /// \brief Executable format
-  ::std::optional< Format > _format;
-
   /// \brief Arguments vector
   ::std::vector<::std::string > _argv;
 
@@ -53,11 +50,6 @@ public:
   ///
   /// \return The file path to analyze
   inline auto filepath(void) const { return _filepath; }
-
-  /// \brief Get the executable format
-  ///
-  /// \return The format
-  inline auto format(void) const { return *_format; }
 
   /// \brief Get the program arguments
   ///

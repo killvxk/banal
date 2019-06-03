@@ -92,6 +92,7 @@ namespace log {
 /// \param args Stuffs
 template < typename... Options >
 void log(const Options&... args) {
+  ::std::cerr << "[DEBUG] ";
   ((::std::cerr << args), ...);
   ::std::cerr << ::std::endl;
 }

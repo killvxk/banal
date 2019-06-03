@@ -55,6 +55,7 @@ void Map::unmap(void) {
                          << ::uc_strerror(e) << ::std::endl;
     _good = false;
   } else {
+    ::banal::log::log("MAP::unmap called on ", this);
     _mapped = false;
     _good = true;
     ::banal::log::log("MAP: ", *this, " is unmapped.");
@@ -75,6 +76,17 @@ void Map::protect(::std::uint32_t perms) {
     _good = true;
     _perms = perms;
   }
+}
+
+Map::Map(Map&& m) {
+  _mapped = m._mapped;
+  _uc = m._uc;
+  _address = m._address;
+  _size = m._size;
+  _perms = m._perms;
+  _good = m._good;
+
+  m._mapped = false;
 }
 
 Map::~Map(void) {
