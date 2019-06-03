@@ -86,27 +86,26 @@ Binary::Binary(const Options& opt, int fd, void* addr, ::std::size_t file_len)
     return nullptr;
   }
 
-  switch (opt.format()) {
-    case Format::ELF: {
-      ::std::unique_ptr< binary::Binary > bin =
-          ::std::make_unique< binary::ELFBinary >(opt,
+  const uint8_t* baddr = static_cast< const uint8_t* >(addr);
+  ::std::unique_ptr< binary::Binary > bin;
+  // Read magic
+  if (baddr[0] == '\x7f' && baddr[1] == 'E' && baddr[2] == 'L' &&
+      baddr[3] == 'F') {
+    // elf
+    bin = ::std::make_unique< binary::ELFBinary >(opt,
                                                   fd,
                                                   addr,
                                                   static_cast<::std::size_t >(
                                                       file_stat.st_size));
-      if (bin->parse()) {
-        return bin;
-      } else {
-        return nullptr;
-      }
-    }
-    case Format::PE: {
-      log::cerr() << "PE is not supported yet" << ::std::endl;
-      return nullptr;
-    }
-    default: {
-      log::unreachable("Unreachable");
-    }
+  } else {
+    // nothing
+    log::cerr() << "This file format is not supported yet." << ::std::endl;
+    return nullptr;
+  }
+  if (bin->parse()) {
+    return bin;
+  } else {
+    return nullptr;
   }
 }
 

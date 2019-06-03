@@ -25,7 +25,5 @@ int main(int argc, char** argv) {
   ::banal::log::cinfo() << "Entry point: 0x" << ::std::hex << bin->entry()
                         << ::std::endl;
   ::banal::Analysis a(opt, *bin);
-  if (!a.set_stack(0xbffff000, 4096))
-    return 1;
   a.start();
 }

@@ -51,8 +51,7 @@ bool Engine::load_segment(::banal::binary::component::Segment& seg) {
                          << " at 0x" << seg.virtual_address() << ": "
                          << ::uc_strerror(e) << ::std::endl;
   }
-  ::banal::log::cinfo() << "Segment " << ::std::dec << seg.index() << " mapped."
-                        << ::std::endl;
+  ::banal::log::log("Segment ", ::std::dec, seg.index(), " mapped.");
   ::banal::log::log("ENGINE: copy ",
                     std::dec,
                     seg.file_size(),
@@ -90,6 +89,8 @@ Engine::Engine(::uc_engine* uc, ::csh csh, ::banal::binary::Binary& binary)
       }
     }
   }
+  ::banal::log::cgood() << "Segments loaded successfully in RAM."
+                        << ::std::endl;
 
   // Find entry symbol
   // Find main

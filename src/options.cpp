@@ -33,18 +33,6 @@ static ::llvm::cl::opt<::std::string > InputFilename(
 static ::llvm::cl::list<::std::string > Argv(
     ::llvm::cl::ConsumeAfter, ::llvm::cl::desc("<program arguments>..."));
 
-/// \brief The format
-static ::llvm::cl::opt< Format > Formatt(
-    "f",
-    ::llvm::cl::Required,
-    ::llvm::cl::desc("Executable format:"),
-    ::llvm::cl::values(
-        clEnumValN(Format::ELF,
-                   str(Format::ELF).data(),
-                   str(Format::ELF).data()),
-        clEnumValN(Format::PE, str(Format::PE).data(), str(Format::PE).data())),
-    ::llvm::cl::cat(MainCategory));
-
 /// @}
 /// \name Analysis options
 /// @{
@@ -69,7 +57,6 @@ static ::llvm::cl::OptionCategory DebugCategory("Debug Options");
 
 Options::Options(int argc, char** argv)
     : _filepath(),
-      _format(::std::nullopt),
       _argv(),
       _status(false) {
   ::llvm::cl::ParseCommandLineOptions(argc,
@@ -77,7 +64,6 @@ Options::Options(int argc, char** argv)
                                       "banal -- buffer overflow analysis");
 
   _filepath = InputFilename.getValue();
-  _format = Formatt;
   _status = true;
   _argv = Argv;
 }

@@ -140,23 +140,47 @@ ELFBinary::sections_cend(void) const {
 ELFBinary::~ELFBinary(void) {}
 
 void ELFBinary::dump(void) const {
-  ::banal::log::cinfo() << _segments.size() << " segment(s): " << ::std::endl;
+  ::banal::log::cinfo() << ::std::dec << _segments.size()
+                        << " segment(s): " << ::std::endl;
   for (auto it = this->segments_cbegin(); it != this->segments_cend(); it++) {
     auto& seg = *it;
-    ::std::cout << '\t' << '[' << seg->index() << "], type=0x" << ::std::hex
-                << seg->type() << ", flags=0x" << std::hex << seg->flags()
-                << ", vaddr=0x" << ::std::setw(8) << ::std::setfill('0')
-                << seg->virtual_address() << ", paddr=0x" << ::std::setfill('0')
-                << seg->physical_address() << ::std::endl;
+    ::banal::log::log('\t',
+                      '[',
+                      seg->index(),
+                      "], type=0x",
+                      ::std::hex,
+                      seg->type(),
+                      ", flags=0x",
+                      std::hex,
+                      seg->flags(),
+                      ", vaddr=0x",
+                      ::std::setw(8),
+                      ::std::setfill('0'),
+                      seg->virtual_address(),
+                      ", paddr=0x",
+                      ::std::setfill('0'),
+                      seg->physical_address());
   }
 
-  ::banal::log::cinfo() << _sections.size() << " section(s): " << ::std::endl;
+  ::banal::log::cinfo() << ::std::dec << _sections.size()
+                        << " section(s): " << ::std::endl;
   for (auto it = this->sections_cbegin(); it != this->sections_cend(); it++) {
     auto& sec = *it;
-    ::std::cout << '\t' << '[' << sec->index() << "]: " << sec->name()
-                << ", type=0x" << ::std::hex << sec->type() << ", flags=0x"
-                << std::hex << sec->flags() << ", address=0x" << ::std::setw(8)
-                << ::std::setfill('0') << sec->address() << ::std::endl;
+    ::banal::log::log('\t',
+                      '[',
+                      sec->index(),
+                      "]: ",
+                      sec->name(),
+                      ", type=0x",
+                      ::std::hex,
+                      sec->type(),
+                      ", flags=0x",
+                      std::hex,
+                      sec->flags(),
+                      ", address=0x",
+                      ::std::setw(8),
+                      ::std::setfill('0'),
+                      sec->address());
   }
   ::banal::log::cinfo() << "NX: " << this->nx() << ::std::endl;
   ::banal::log::cinfo() << "PIE: " << this->pie() << ::std::endl;

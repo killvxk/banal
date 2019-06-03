@@ -118,9 +118,6 @@ Analysis::Analysis(const Options& opt, binary::Binary& binary)
       _uc(nullptr),
       _binary(binary),
       _virtual_binary_address(::std::nullopt),
-      _stack_address(::std::nullopt),
-      _stack_size(::std::nullopt),
-      _stacks(),
       _good(false) {
   {
     auto capstone_value = get_cs_architecture(_binary.architecture());
@@ -161,42 +158,6 @@ Analysis::~Analysis(void) {
   _uc = nullptr;
 }
 
-bool Analysis::set_stack(::std::uint64_t address, ::std::size_t size) {
-  if (_stack_address.has_value() && _stack_size.has_value()) {
-    log::cwarn() << "Stack is already initialized. Unmapping the old one..."
-                 << ::std::endl;
-    if (auto e = uc_mem_unmap(_uc, *_stack_address, *_stack_size);
-        e != ::UC_ERR_OK) {
-      log::cerr() << "Unable to unmap previous stack with Unicorn: "
-                  << ::uc_strerror(e) << ::std::endl;
-      return false;
-    } else {
-      log::cinfo() << "Previous stack unmaped." << ::std::endl;
-      _stack_address.reset();
-      _stack_size.reset();
-    }
-  }
-  if (auto e = ::uc_mem_map(_uc, address, size, UC_PROT_READ | UC_PROT_WRITE);
-      e != ::UC_ERR_OK) {
-    log::cerr() << "Unable to map stack address at "
-                << reinterpret_cast< void* >(address) << ", of length " << size
-                << "B: " << ::uc_strerror(e) << ::std::endl;
-    return false;
-  } else {
-    _stack_address = address;
-    _stack_size = size;
-  }
-
-  auto esp = (address + size - 0x10);
-  if (auto e = ::uc_reg_write(_uc, ::UC_X86_REG_RSP, &esp); e != ::UC_ERR_OK) {
-    log::cerr() << "Unable to set SP register: " << ::uc_strerror(e)
-                << ::std::endl;
-    return false;
-  }
-
-  return true;
-}
-
 void Analysis::start(::std::uint64_t entry) {
   (void)entry;
   // debug
@@ -209,20 +170,6 @@ void Analysis::start(::std::uint64_t entry) {
   ::cs_free(insn, 1);
   while (engine.step()) {
     // dump_registers(_uc, _binary.architecture());
-  }
-}
-
-::std::unique_ptr< execution::Stack > Analysis::new_stack(::std::size_t size) {
-  switch (_binary.architecture()) {
-    case Architecture::X86:
-    case Architecture::ARM:
-      return std::make_unique< execution::Stack >(_uc, *_stack_address, size);
-    case Architecture::X86_64:
-    case Architecture::AArch64:
-      return std::make_unique< execution::Stack >(_uc, *_stack_address, size);
-    default: {
-      log::unreachable("Unreachable");
-    }
   }
 }
 

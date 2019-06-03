@@ -39,8 +39,11 @@ ELFSection::ELFSection(const ::ELFIO::elfio& file,
             << " of section `" << this->name() << "`." << ::std::endl;
         return;
       }
-      ::banal::log::cinfo() << "Retrieve symbol `" << name << "` from section `"
-                            << this->name() << "`." << ::std::endl;
+      ::banal::log::log("Retrieve symbol `",
+                        name,
+                        "` from section `",
+                        this->name(),
+                        "`.");
       _symbols.emplace_back(i, name, value, size, type, *this);
     }
   }
