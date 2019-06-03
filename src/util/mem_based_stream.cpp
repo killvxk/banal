@@ -13,7 +13,7 @@ namespace banal {
 namespace util {
 
 MemBasedStream::MemBasedStream(::std::uint8_t* begin, ::std::size_t size)
-    : ::std::istream(static_cast< std::streambuf* >(this)),
+    : ::std::istream(static_cast< ::std::streambuf* >(this)),
       _begin(begin),
       _end(begin + size),
       _current(begin),

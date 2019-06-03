@@ -152,7 +152,7 @@ void ELFBinary::dump(void) const {
                       ::std::hex,
                       seg->type(),
                       ", flags=0x",
-                      std::hex,
+                      ::std::hex,
                       seg->flags(),
                       ", vaddr=0x",
                       ::std::setw(8),
@@ -176,7 +176,7 @@ void ELFBinary::dump(void) const {
                       ::std::hex,
                       sec->type(),
                       ", flags=0x",
-                      std::hex,
+                      ::std::hex,
                       sec->flags(),
                       ", address=0x",
                       ::std::setw(8),
@@ -201,7 +201,7 @@ void ELFBinary::dump(void) const {
   return ::std::nullopt;
 }
 
-::std::optional< std::reference_wrapper< const component::Symbol > > ELFBinary::
+::std::optional< ::std::reference_wrapper< const component::Symbol > > ELFBinary::
     get_symbol(uintarch_t address) const {
   if (const auto it = _symbols.find(address); it != _symbols.end()) {
     return it->second;

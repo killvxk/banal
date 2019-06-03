@@ -53,7 +53,7 @@ bool Engine::load_segment(::banal::binary::component::Segment& seg) {
   }
   ::banal::log::log("Segment ", ::std::dec, seg.index(), " mapped.");
   ::banal::log::log("ENGINE: copy ",
-                    std::dec,
+                    ::std::dec,
                     seg.file_size(),
                     " bytes from binary (",
                     ::std::hex,
