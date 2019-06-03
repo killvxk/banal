@@ -10,14 +10,21 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
+
+#include "banal/binary/component/symbol.hpp"
 
 namespace banal {
 namespace binary {
 namespace component {
 
+// Forward declaration
+class Segment;
+
 /// \brief A section
 class Section {
 private:
+  /// \brief The index of the section
   ::std::uint16_t _index;
 
 public:
@@ -91,6 +98,17 @@ public:
   ///
   /// \return Index of the section
   inline auto index(void) const { return _index; }
+
+public:
+  /// \brief Iterator to the first symbol
+  ///
+  /// \return Iterator to the first symbol
+  virtual ::std::vector< Symbol >::const_iterator symbols_cbegin(void) = 0;
+
+  /// \brief Iterator end of the symbols
+  ///
+  /// \return Iterator end of the symbols
+  virtual ::std::vector< Symbol >::const_iterator symbols_cend(void) = 0;
 };
 
 } // end namespace component

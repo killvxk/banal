@@ -9,6 +9,9 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
+
+#include "banal/conf.hpp"
 
 namespace banal {
 namespace binary {
@@ -54,17 +57,17 @@ public:
   /// \brief Get aligment on the segment
   ///
   /// \return Alignments of the segment
-  virtual ::std::uint64_t align(void) const = 0;
+  virtual uintarch_t align(void) const = 0;
 
   /// \brief Get virtual address of the segment
   ///
   /// \return Virtual address of the segment
-  virtual ::std::uint64_t virtual_address(void) const = 0;
+  virtual uintarch_t virtual_address(void) const = 0;
 
   /// \brief Get the physical address of the segment
   ///
   /// \return Physical address of the segment
-  virtual ::std::uint64_t physical_address(void) const = 0;
+  virtual uintarch_t physical_address(void) const = 0;
 
   /// \brief Get the file size of the segment
   ///
@@ -86,6 +89,16 @@ public:
   ///
   /// \return The index of the segment
   inline auto index(void) const { return _index; }
+
+  /// \brief Check if address is contained inside the segment
+  inline std::optional< uintarch_t > contains(uintarch_t address) {
+    if (address >= this->virtual_address() &&
+        address <= this->virtual_address() + this->memory_size()) {
+      auto offset = address - this->virtual_address();
+      return this->offset() + offset;
+    }
+    return ::std::nullopt;
+  }
 };
 
 } // end namespace component

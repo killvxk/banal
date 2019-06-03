@@ -52,6 +52,7 @@ add_executable(${BANAL_NAME}
   ${BANAL_SRC_DIRS}/analysis.cpp
   ${BANAL_SRC_DIRS}/banal.cpp
   ${BANAL_SRC_DIRS}/binary/binary.cpp
+  ${BANAL_SRC_DIRS}/binary/component/symbol.cpp
   ${BANAL_SRC_DIRS}/binary/elf/component/segment.cpp
   ${BANAL_SRC_DIRS}/binary/elf/component/section.cpp
   ${BANAL_SRC_DIRS}/binary/elf/elf.cpp

@@ -202,11 +202,14 @@ void Analysis::start(::std::uint64_t entry) {
   // debug
   _binary.dump();
 
-  execution::Engine engine(_uc, _binary);
+  execution::Engine engine(_uc, _csh, _binary);
 
   // prepare capstone
   ::cs_insn* insn = ::cs_malloc(_csh);
   ::cs_free(insn, 1);
+  while (engine.step()) {
+    // dump_registers(_uc, _binary.architecture());
+  }
 }
 
 ::std::unique_ptr< execution::Stack > Analysis::new_stack(::std::size_t size) {

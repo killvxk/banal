@@ -27,6 +27,9 @@ private:
   /// \brief Sections
   ::std::vector<::std::unique_ptr< component::Section > > _sections;
 
+  /// \brief Entry
+  uintarch_t _entry;
+
   /// \brief NX
   bool _nx;
 
@@ -55,7 +58,8 @@ public:
 public:
   ::banal::Format format(void) const override { return Format::ELF; }
   ::banal::Architecture architecture(void) const override;
-  ::std::uint64_t entry(void) const override;
+  uintarch_t entry(void) const override;
+  void set_entry(uintarch_t e) override;
 
 protected:
   bool parse(void) override;
@@ -74,6 +78,10 @@ public:
 public:
   inline bool nx(void) const override { return _nx; }
   inline bool pie(void) const override { return _pie; }
+
+public:
+  ::std::optional< uintarch_t > get_address(
+      const component::Symbol& sym) const override;
 };
 } // end namespace binary
 } // end namespace banal

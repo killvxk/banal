@@ -20,17 +20,22 @@ namespace component {
 class ELFSection : public Section {
 private:
   /// \brief The elfio section
-  const ::ELFIO::section& _section;
+  ::ELFIO::section& _section;
 
   /// \brief Name of the section
   ::std::string _name;
+
+  /// \brief The symbols
+  ::std::vector< Symbol > _symbols;
 
 public:
   /// \brief Constructor
   ///
   /// \param index Index of the section
   /// \param sec Pointer to the elfio section object
-  ELFSection(::std::uint16_t index, const ::ELFIO::section* sec);
+  ELFSection(const ::ELFIO::elfio& file,
+             ::std::uint16_t index,
+             ::ELFIO::section* sec);
 
   /// \brief Copy constructor
   ELFSection(const ELFSection&) = delete;
@@ -55,6 +60,14 @@ public:
   ::std::uint64_t address(void) const override;
   ::std::size_t size(void) const override;
   const ::std::uint8_t* data(void) const override;
+
+public:
+  ::std::vector< Symbol >::const_iterator symbols_cbegin(void) override {
+    return _symbols.cbegin();
+  }
+  ::std::vector< Symbol >::const_iterator symbols_cend(void) override {
+    return _symbols.cend();
+  }
 };
 
 } // end namespace component

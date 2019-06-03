@@ -7,13 +7,44 @@
 /// Contact: thomas at bailleux.me
 
 #include "banal/binary/elf/component/section.hpp"
+#include "banal/util/log.hpp"
 
 namespace banal {
 namespace binary {
 namespace component {
 
-ELFSection::ELFSection(::std::uint16_t index, const ::ELFIO::section* sec)
-    : Section(index), _section(*sec), _name(sec->get_name()) {}
+ELFSection::ELFSection(const ::ELFIO::elfio& file,
+                       ::std::uint16_t index,
+                       ::ELFIO::section* sec)
+    : Section(index), _section(*sec), _name(sec->get_name()), _symbols() {
+  if (this->type() == SHT_SYMTAB || this->type() == SHT_DYNSYM) {
+    ::ELFIO::symbol_section_accessor sa(file, sec);
+    ::std::size_t len_symbols = sa.get_symbols_num();
+    ::banal::log::log("Symbols number: ",
+                      len_symbols,
+                      " for section `",
+                      this->name(),
+                      '`');
+    for (::std::size_t i = 0; i < len_symbols; i++) {
+      ::std::string name;
+      uintarch_t value = 0;
+      ::std::size_t size;
+      uint8_t bind = 0;
+      uint8_t type = 0;
+      ::std::uint16_t j = 0;
+      uint8_t other = 0;
+      if (!sa.get_symbol(i, name, value, size, bind, type, j, other)) {
+        ::banal::log::cerr()
+            << "Unable to retrieve symbol n°" << ::std::dec << i
+            << " of section `" << this->name() << "`." << ::std::endl;
+        return;
+      }
+      ::banal::log::cinfo() << "Retrieve symbol `" << name << "` from section `"
+                            << this->name() << "`." << ::std::endl;
+      _symbols.emplace_back(i, name, value, size, type, *this);
+    }
+  }
+}
 
 ::std::string_view ELFSection::name(void) const {
   return _name;

@@ -45,9 +45,9 @@ public:
   ::std::size_t offset(void) const override;
   ::std::uint32_t type(void) const override;
   ::std::uint32_t flags(void) const override;
-  ::std::uint64_t align(void) const override;
-  ::std::uint64_t virtual_address(void) const override;
-  ::std::uint64_t physical_address(void) const override;
+  uintarch_t align(void) const override;
+  uintarch_t virtual_address(void) const override;
+  uintarch_t physical_address(void) const override;
   ::std::size_t file_size(void) const override;
   ::std::size_t memory_size(void) const override;
   const ::std::uint8_t* data(void) const override;

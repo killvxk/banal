@@ -19,21 +19,27 @@
 #if ARCH_SIZE == ARCH_SIZE_32
 using uintarch_t = ::std::uint32_t;
 namespace banal {
-inline bool arch32() {
+inline bool arch32(void) {
   return true;
 }
-inline bool arch64() {
+inline bool arch64(void) {
   return false;
+}
+inline uintarch_t stack(void) {
+  return 0xbffff000;
 }
 } // end namespace banal
 #elif ARCH_SIZE == ARCH_SIZE_64
 using uintarch_t = ::std::uint64_t;
 namespace banal {
-inline bool arch32() {
+inline bool arch32(void) {
   return false;
 }
-inline bool arch64() {
+inline bool arch64(void) {
   return true;
+}
+inline uintarch_t stack(void) {
+  return 0x7ffffffffffff000;
 }
 } // end namespace banal
 #else

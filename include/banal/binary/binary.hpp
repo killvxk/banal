@@ -114,7 +114,12 @@ public:
   /// \brief Get the entry point of the binary
   ///
   /// \return The entry point of the binary
-  virtual ::std::uint64_t entry(void) const = 0;
+  virtual uintarch_t entry(void) const = 0;
+
+  /// \brief Set the entry point of the binary
+  ///
+  /// \param e Entry point of the binary
+  virtual void set_entry(uintarch_t e) = 0;
 
 protected:
   /// \brief Parse the binary, in order to get all the needed information
@@ -164,6 +169,14 @@ public:
   ///
   /// \return true if PIE, else false
   virtual bool pie(void) const = 0;
+
+public:
+  /// \brief Get mapped address of a symbol
+  ///
+  /// \param sym The symbol
+  /// \return The mapped address of the symbol if exists, else nothing
+  virtual ::std::optional< uintarch_t > get_address(
+      const component::Symbol& sym) const = 0;
 };
 
 /// \brief Open a binary

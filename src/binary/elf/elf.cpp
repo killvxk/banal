@@ -28,6 +28,7 @@ ELFBinary::ELFBinary(const ::banal::Options& opt,
       _reader(),
       _segments(),
       _sections(),
+      _entry(static_cast< uintarch_t >(_reader.get_entry())),
       _nx(true),
       _pie(true) {
   if (!_reader.load(_stream)) {
@@ -72,8 +73,12 @@ ELFBinary::ELFBinary(const ::banal::Options& opt,
   }
 }
 
-::std::uint64_t ELFBinary::entry(void) const {
-  return static_cast<::std::uint64_t >(_reader.get_entry());
+uintarch_t ELFBinary::entry(void) const {
+  return _entry;
+}
+
+void ELFBinary::set_entry(uintarch_t e) {
+  _entry = e;
 }
 
 bool ELFBinary::parse(void) {
@@ -83,15 +88,14 @@ bool ELFBinary::parse(void) {
 
   auto seg_num = _reader.segments.size();
   ::banal::log::log("Segment number: ", seg_num);
+  ::std::vector<::std::uint16_t > known_sections;
+  known_sections.reserve(_reader.sections.size());
   for (::std::uint32_t i = 0; i < seg_num; i++) {
-    {
-      const auto* seg = _reader.segments[i];
-      _segments.emplace_back(
-          ::std::make_unique< component::ELFSegment >(i, seg));
-    }
-    auto& seg = _segments.back();
+    const auto* seg = _reader.segments[i];
+    _segments.emplace_back(::std::make_unique< component::ELFSegment >(i, seg));
+    auto& segg = _segments.back();
     // check NX
-    if (seg->type() == PT_GNU_STACK && (seg->flags() & PF_X)) {
+    if (segg->type() == PT_GNU_STACK && (segg->flags() & PF_X)) {
       _nx = false;
     }
   }
@@ -99,8 +103,9 @@ bool ELFBinary::parse(void) {
   auto sec_num = _reader.sections.size();
   ::banal::log::log("Section number: ", sec_num);
   for (::std::uint32_t i = 0; i < sec_num; i++) {
-    const auto* sec = _reader.sections[i];
-    _sections.emplace_back(::std::make_unique< component::ELFSection >(i, sec));
+    auto* sec = _reader.sections[i];
+    _sections.emplace_back(
+        ::std::make_unique< component::ELFSection >(_reader, i, sec));
   }
   return true;
 }
@@ -148,6 +153,16 @@ void ELFBinary::dump(void) const {
   }
   ::banal::log::cinfo() << "NX: " << this->nx() << ::std::endl;
   ::banal::log::cinfo() << "PIE: " << this->pie() << ::std::endl;
+}
+
+::std::optional< uintarch_t > ELFBinary::get_address(
+    const component::Symbol& sym) const {
+  for (auto& seg : _segments) {
+    if (auto real = seg->contains(sym.value())) {
+      return *real;
+    }
+  }
+  return ::std::nullopt;
 }
 
 } // end namespace binary

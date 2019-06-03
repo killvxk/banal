@@ -27,15 +27,15 @@ ELFSegment::ELFSegment(::std::uint16_t index, const ::ELFIO::segment* seg)
   return _seg.get_flags();
 }
 
-::std::uint64_t ELFSegment::align(void) const {
+uintarch_t ELFSegment::align(void) const {
   return _seg.get_align();
 }
 
-::std::uint64_t ELFSegment::virtual_address(void) const {
+uintarch_t ELFSegment::virtual_address(void) const {
   return _seg.get_virtual_address();
 }
 
-::std::uint64_t ELFSegment::physical_address(void) const {
+uintarch_t ELFSegment::physical_address(void) const {
   return _seg.get_physical_address();
 }
 

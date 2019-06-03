@@ -85,8 +85,20 @@ Map::~Map(void) {
 
 ::std::ostream& operator<<(::std::ostream& os,
                            const ::banal::execution::Map& m) {
-  return os << "Map@" << &m << "(0x" << ::std::hex << m.address() << ", "
-            << ::std::dec << m.size() << ", " << ::std::hex << m.perms() << ')';
+  os << "Map@" << &m << "(0x" << ::std::hex << m.address() << "->0x"
+     << ::std::hex << m.address() + m.size() << ", " << ::std::dec << m.size()
+     << ", ";
+  if (m.perms() & ::UC_PROT_READ) {
+    os << "READ, ";
+  }
+  if (m.perms() & ::UC_PROT_WRITE) {
+    os << "WRITE, ";
+  }
+  if (m.perms() & ::UC_PROT_EXEC) {
+    os << "EXEC";
+  }
+  os << ")";
+  return os;
 }
 
 } // end namespace execution
