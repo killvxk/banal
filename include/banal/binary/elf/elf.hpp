@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include <unordered_map>
+
 #include <elfio/elfio.hpp>
 
 #include "banal/binary/binary.hpp"
@@ -26,6 +28,9 @@ private:
 
   /// \brief Sections
   ::std::vector<::std::unique_ptr< component::Section > > _sections;
+
+  /// \brief Symbols
+  ::std::unordered_map< uintarch_t, const component::Symbol& > _symbols;
 
   /// \brief Entry
   uintarch_t _entry;
@@ -82,6 +87,9 @@ public:
 public:
   ::std::optional< uintarch_t > get_address(
       const component::Symbol& sym) const override;
+  ::std::optional< uintarch_t > get_address(uintarch_t address) const override;
+  ::std::optional< std::reference_wrapper< const component::Symbol > >
+  get_symbol(uintarch_t address) const override;
 };
 } // end namespace binary
 } // end namespace banal

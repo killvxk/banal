@@ -8,6 +8,7 @@
 
 #include <elfio/elf_types.hpp>
 
+#include "banal/architecture.hpp"
 #include "banal/execution/engine.hpp"
 
 namespace banal {
@@ -171,8 +172,9 @@ bool Engine::step(void) {
                          << ::cs_strerror(::cs_errno(_csh)) << ::std::endl;
     return false;
   }
-  ::banal::log::cinfo() << "Emulating instruction `" << _insn->mnemonic << '\t'
-                        << _insn->op_str << ::std::endl;
+  ::banal::log::cinfo() << "Emulating instruction [0x" << ::std::hex
+                        << _insn->address << "]> `" << _insn->mnemonic << '\t'
+                        << _insn->op_str << '`' << ::std::endl;
   auto e = ::uc_emu_start(_uc, _state.begin, _state.end, 5000, 1);
   if (e != ::UC_ERR_OK) {
     ::banal::log::cerr() << "Unable to emulate insn at 0x" << ::std::hex
@@ -180,6 +182,25 @@ bool Engine::step(void) {
                          << ::std::endl;
     return false;
   }
+  uintarch_t ip = 0;
+  if (e = ::uc_reg_read(_uc,
+                        ::banal::get_ip(_binary.architecture()).first,
+                        &ip);
+      e != ::UC_ERR_OK) {
+    ::banal::log::cerr() << "Unable to read IP: " << ::uc_strerror(e)
+                         << ::std::endl;
+    return false;
+  }
+  _state.begin = ip;
+  _state.cs.address = ip;
+
+  auto new_addr = _binary.get_address(ip);
+  if (!new_addr) {
+    ::banal::log::cerr() << "Address 0x" << ::std::hex << ip
+                         << " is not mapped.in the file." << ::std::endl;
+    return false;
+  }
+  _state.cs.cursor = _binary.begin() + *_binary.get_address(ip);
   _state.begin = _state.cs.address;
   return true;
 }

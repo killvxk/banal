@@ -124,6 +124,40 @@ inline bool is_architecture_size_supported(Architecture a) {
   }
 }
 
+/// \brief Get the sp register depending on the architecture
+///
+/// \param a The target architecture
+///
+/// \return pair of register, the first is for capstone, the second is for
+/// unicorn
+inline ::std::pair<::std::uint32_t, ::std::uint32_t > get_sp(Architecture a) {
+  switch (a) {
+    case Architecture::X86:
+      return {::X86_REG_ESP, ::UC_X86_REG_ESP};
+    case Architecture::X86_64:
+      return {::X86_REG_RSP, ::UC_X86_REG_RSP};
+    default:
+      log::unreachable("Unreachable");
+  }
+}
+
+/// \brief Get the ip register depending on the architecture
+///
+/// \param a The target architecture
+///
+/// \return pair of register, the first is for capstone, the second is for
+/// unicorn
+inline ::std::pair<::std::int32_t, ::std::int32_t > get_ip(Architecture a) {
+  switch (a) {
+    case Architecture::X86:
+      return {::X86_REG_EIP, ::UC_X86_REG_EIP};
+    case Architecture::X86_64:
+      return {::X86_REG_RIP, ::UC_X86_REG_RIP};
+    default:
+      log::unreachable("Unreachable");
+  }
+}
+
 } // end namespace banal
 
 inline ::std::ostream& operator<<(::std::ostream& os, ::banal::Architecture a) {

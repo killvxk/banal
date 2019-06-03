@@ -106,6 +106,13 @@ bool ELFBinary::parse(void) {
     auto* sec = _reader.sections[i];
     _sections.emplace_back(
         ::std::make_unique< component::ELFSection >(_reader, i, sec));
+    auto& secc = *_sections.back();
+    for (auto it = secc.symbols_cbegin(); it != secc.symbols_cend(); it++) {
+      auto& sym = *it;
+      ::std::pair< uintarch_t, const component::Symbol& > value{sym.value(),
+                                                                sym};
+      _symbols.insert(value);
+    }
   }
   return true;
 }
@@ -157,10 +164,22 @@ void ELFBinary::dump(void) const {
 
 ::std::optional< uintarch_t > ELFBinary::get_address(
     const component::Symbol& sym) const {
+  return this->get_address(sym.value());
+}
+
+::std::optional< uintarch_t > ELFBinary::get_address(uintarch_t address) const {
   for (auto& seg : _segments) {
-    if (auto real = seg->contains(sym.value())) {
+    if (auto real = seg->contains(address)) {
       return *real;
     }
+  }
+  return ::std::nullopt;
+}
+
+::std::optional< std::reference_wrapper< const component::Symbol > > ELFBinary::
+    get_symbol(uintarch_t address) const {
+  if (const auto it = _symbols.find(address); it != _symbols.end()) {
+    return it->second;
   }
   return ::std::nullopt;
 }

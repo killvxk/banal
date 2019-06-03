@@ -91,6 +91,10 @@ public:
   inline auto index(void) const { return _index; }
 
   /// \brief Check if address is contained inside the segment
+  ///
+  /// \param address Address to check
+  ///
+  /// \return The offset of the virtual address in the file
   inline std::optional< uintarch_t > contains(uintarch_t address) {
     if (address >= this->virtual_address() &&
         address <= this->virtual_address() + this->memory_size()) {

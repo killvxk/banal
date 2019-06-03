@@ -177,6 +177,22 @@ public:
   /// \return The mapped address of the symbol if exists, else nothing
   virtual ::std::optional< uintarch_t > get_address(
       const component::Symbol& sym) const = 0;
+
+  /// \brief Get mapped address of an address
+  ///
+  /// \param address The address
+  ///
+  /// \return The mapped address of the address
+  virtual ::std::optional< uintarch_t > get_address(
+      uintarch_t address) const = 0;
+
+  /// \brief Get symbol by virtual address
+  ///
+  /// \param address Address of the symbol
+  ///
+  /// \return The symbol if exists, else nothing
+  virtual ::std::optional< std::reference_wrapper< const component::Symbol > >
+  get_symbol(uintarch_t address) const = 0;
 };
 
 /// \brief Open a binary
