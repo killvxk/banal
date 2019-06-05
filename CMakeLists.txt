@@ -53,13 +53,13 @@ add_executable(${BANAL_NAME}
   ${BANAL_SRC_DIRS}/banal.cpp
   ${BANAL_SRC_DIRS}/binary/binary.cpp
   ${BANAL_SRC_DIRS}/binary/component/symbol.cpp
-  ${BANAL_SRC_DIRS}/binary/elf/component/segment.cpp
-  ${BANAL_SRC_DIRS}/binary/elf/component/section.cpp
-  ${BANAL_SRC_DIRS}/binary/elf/elf.cpp
   ${BANAL_SRC_DIRS}/execution/engine.cpp
   ${BANAL_SRC_DIRS}/execution/map.cpp
   ${BANAL_SRC_DIRS}/execution/stack.cpp
   ${BANAL_SRC_DIRS}/format.cpp
+  ${BANAL_SRC_DIRS}/impl/binary/elf/binary.cpp
+  ${BANAL_SRC_DIRS}/impl/binary/elf/component/section.cpp
+  ${BANAL_SRC_DIRS}/impl/binary/elf/component/segment.cpp
   ${BANAL_SRC_DIRS}/options.cpp
   ${BANAL_SRC_DIRS}/util/log.cpp
   ${BANAL_SRC_DIRS}/util/mem_based_stream.cpp

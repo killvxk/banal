@@ -10,9 +10,9 @@
 
 #include <elfio/elfio.hpp>
 
-#include "banal/binary/elf/component/section.hpp"
-#include "banal/binary/elf/component/segment.hpp"
-#include "banal/binary/elf/elf.hpp"
+#include "banal/impl/binary/elf/binary.hpp"
+#include "banal/impl/binary/elf/component/section.hpp"
+#include "banal/impl/binary/elf/component/segment.hpp"
 #include "banal/util/log.hpp"
 
 #define PT_GNU_STACK 0x6474e551
@@ -138,6 +138,11 @@ ELFBinary::sections_cend(void) const {
   return _sections.cend();
 }
 
+const ::std::unordered_map< uintarch_t, const component::Symbol& >& ELFBinary::
+    symbols(void) const {
+  return _symbols;
+}
+
 ELFBinary::~ELFBinary(void) {}
 
 void ELFBinary::dump(void) const {
@@ -201,8 +206,8 @@ void ELFBinary::dump(void) const {
   return ::std::nullopt;
 }
 
-::std::optional< ::std::reference_wrapper< const component::Symbol > > ELFBinary::
-    get_symbol(uintarch_t address) const {
+::std::optional<::std::reference_wrapper< const component::Symbol > >
+ELFBinary::get_symbol(uintarch_t address) const {
   if (const auto it = _symbols.find(address); it != _symbols.end()) {
     return it->second;
   }

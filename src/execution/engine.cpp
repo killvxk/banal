@@ -15,6 +15,7 @@ namespace banal {
 namespace execution {
 
 bool Engine::load_segment(::banal::binary::component::Segment& seg) {
+  // Compute the size of the page
   ::std::size_t size = seg.memory_size();
   if ((size % 4096) > 0) {
     size = (1 + (size / 4096)) * 4096;
@@ -30,7 +31,9 @@ bool Engine::load_segment(::banal::binary::component::Segment& seg) {
     perms |= ::UC_PROT_WRITE;
   }
   auto vaddr = seg.virtual_address() & 0xFFFFFFFFFFFFF000;
+
   if ((seg.virtual_address() + seg.file_size()) > (vaddr + size)) {
+    // 4KB is not enough
     size += 4096;
   }
   _mem.emplace_back(_uc, vaddr, size, perms);
@@ -38,22 +41,25 @@ bool Engine::load_segment(::banal::binary::component::Segment& seg) {
   if (!m.good()) {
     return false;
   }
+
   if (auto e = ::uc_mem_write(_uc,
                               seg.virtual_address(),
                               reinterpret_cast< const void* >(_binary.begin() +
                                                               seg.offset()),
                               seg.file_size());
       e != ::UC_ERR_OK) {
+    // fail to copy data from file to mapped memory
     ::banal::log::cerr() << "Unable to copy data " << ::std::dec
                          << seg.file_size()
                          << " bytes from binary (at offset 0x" << ::std::hex
                          << seg.offset() << ')' << " to memory map " << m
                          << " at 0x" << seg.virtual_address() << ": "
                          << ::uc_strerror(e) << ::std::endl;
+    return false;
   }
   ::banal::log::log("Segment ", ::std::dec, seg.index(), " mapped.");
   ::banal::log::log("ENGINE: copy ",
-                    ::std::dec,
+                    std::dec,
                     seg.file_size(),
                     " bytes from binary (",
                     ::std::hex,
@@ -74,13 +80,9 @@ Engine::Engine(::uc_engine* uc, ::csh csh, ::banal::binary::Binary& binary)
       _binary(binary),
       _mem(),
       _stacks(),
-      _state{binary.entry(),
-             0,
-             {reinterpret_cast< const ::std::uint8_t* >(binary.entry()),
-              0,
-              binary.entry()}} {
-  // Load loadable segments
+      _state{binary.entry(), 0} {
   for (auto it = binary.segments_cbegin(); it != binary.segments_cend(); it++) {
+    // Load loadable segments
     auto& seg = *it;
     if (seg->type() == PT_LOAD) {
       // loadable segment
@@ -95,34 +97,26 @@ Engine::Engine(::uc_engine* uc, ::csh csh, ::banal::binary::Binary& binary)
   // Find entry symbol
   // Find main
   bool f = false;
-  for (auto it = binary.sections_cbegin(); it != binary.sections_cend(); it++) {
-    const auto& sec = *it;
-    for (auto jt = sec->symbols_cbegin(); jt != sec->symbols_cend(); jt++) {
-      const auto& sym = *jt;
-      if (sym.name() == "main") {
-        auto file_offset = binary.get_address(sym);
-        if (!file_offset) {
-          ::banal::log::cwarn() << "Symbol cannot be located" << ::std::endl;
-        } else {
-          _state.begin = sym.value();
-          _state.end = _state.begin + sym.size();
-          _state.cs.address = sym.value();
-          _state.cs.size = sym.size();
-          _state.cs.cursor = binary.begin() + *file_offset;
-          ::banal::log::log("Entry symbol: ",
-                            sym.name(),
-                            ", size=0x",
-                            ::std::hex,
-                            sym.size(),
-                            ", virtual address = 0x",
-                            ::std::hex,
-                            sym.value(),
-                            ", offset file = 0x",
-                            *file_offset);
-          _binary.set_entry(sym.value());
-          f = true;
-          break;
-        }
+  for (auto& [address, symbol] : binary.symbols()) {
+    if (symbol.name() == "main") {
+      auto file_offset = binary.get_address(symbol);
+      if (!file_offset) {
+        ::banal::log::cwarn() << "Symbol cannot be located" << ::std::endl;
+      } else {
+        _state.begin = symbol.value();
+        _state.end = _state.begin + symbol.size();
+        _binary.set_entry(symbol.value());
+        ::banal::log::log("Entry symbol: ",
+                          symbol.name(),
+                          ", size=0x",
+                          ::std::hex,
+                          symbol.size(),
+                          ", virtual address = 0x",
+                          ::std::hex,
+                          symbol.value(),
+                          ", offset file = 0x",
+                          *file_offset);
+        f = true;
       }
     }
   }
@@ -159,10 +153,36 @@ Engine::Engine(::uc_engine* uc, ::csh csh, ::banal::binary::Binary& binary)
       ::banal::log::unreachable("Unreachable");
     }
   }
+
+  // hook code
+  ::uc_hook hh;
+  ::uc_cb_hookcode_t code_hook = Engine::hook_insn;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
+  if (auto e = ::uc_hook_add(_uc,
+                             &hh,
+                             ::UC_HOOK_CODE,
+                             reinterpret_cast< void* >(code_hook),
+                             static_cast< void* >(this),
+                             1,
+                             0);
+      e != ::UC_ERR_OK) {
+#pragma clang diagnostic pop
+    ::banal::log::cerr() << "Unable to register code hook: " << ::uc_strerror(e)
+                         << ::std::endl;
+    return;
+  }
 }
 
-bool Engine::step(void) {
-  if (auto b = ::cs_disasm_iter(_csh,
+bool Engine::emulate(void) {
+  auto e = ::uc_emu_start(_uc, _state.begin, _state.end, 0, 0);
+  if (e != ::UC_ERR_OK) {
+    ::banal::log::cerr() << "Unable emulate code: " << ::uc_strerror(e)
+                         << ::std::endl;
+    return false;
+  }
+  return true;
+  /*if (auto b = ::cs_disasm_iter(_csh,
                                 &_state.cs.cursor,
                                 &_state.cs.size,
                                 &_state.cs.address,
@@ -172,44 +192,56 @@ bool Engine::step(void) {
                          << static_cast< const void* >(_state.cs.cursor) << ": "
                          << ::cs_strerror(::cs_errno(_csh)) << ::std::endl;
     return false;
-  }
-  ::banal::log::cinfo() << "Emulating instruction [0x" << ::std::hex
-                        << _insn->address << "]> `" << _insn->mnemonic << '\t'
-                        << _insn->op_str << '`' << ::std::endl;
-  auto e = ::uc_emu_start(_uc, _state.begin, _state.end, 5000, 1);
-  if (e != ::UC_ERR_OK) {
-    ::banal::log::cerr() << "Unable to emulate insn at 0x" << ::std::hex
-                         << _state.begin << ": " << ::uc_strerror(e)
-                         << ::std::endl;
-    return false;
-  }
-  uintarch_t ip = 0;
-  if (e = ::uc_reg_read(_uc,
-                        ::banal::get_ip(_binary.architecture()).first,
-                        &ip);
-      e != ::UC_ERR_OK) {
-    ::banal::log::cerr() << "Unable to read IP: " << ::uc_strerror(e)
-                         << ::std::endl;
-    return false;
-  }
-  _state.begin = ip;
-  _state.cs.address = ip;
-
-  auto new_addr = _binary.get_address(ip);
-  if (!new_addr) {
-    ::banal::log::cerr() << "Address 0x" << ::std::hex << ip
-                         << " is not mapped.in the file." << ::std::endl;
-    return false;
-  }
-  _state.cs.cursor = _binary.begin() + *_binary.get_address(ip);
-  _state.begin = _state.cs.address;
-  return true;
+  }*/
 }
 
 Engine::~Engine(void) {
   if (_insn) {
     ::cs_free(_insn, 1);
   }
+}
+
+void Engine::stop(void) {
+  if (auto e = ::uc_emu_stop(_uc); e != ::UC_ERR_OK) {
+    ::banal::log::cerr() << "Unable to stop emulation: " << ::uc_strerror(e)
+                         << ::std::endl;
+  }
+}
+
+void Engine::hook_insn(::uc_engine*,
+                       ::std::uint64_t address,
+                       ::std::uint32_t size,
+                       void* user_data) {
+  Engine* e = static_cast< Engine* >(user_data);
+  e->hook_insn(static_cast< uintarch_t >(address),
+               static_cast<::std::size_t >(size));
+}
+
+void Engine::hook_insn(uintarch_t address, ::std::size_t size) {
+  ::std::vector<::std::uint8_t > insn_buffer;
+  insn_buffer.reserve(size);
+  if (auto e = ::uc_mem_read(_uc,
+                             static_cast<::std::uint64_t >(address),
+                             insn_buffer.data(),
+                             size);
+      e != ::UC_ERR_OK) {
+    ::banal::log::cerr() << "Unable to read instruction at 0x" << ::std::hex
+                         << address << ": " << ::uc_strerror(e) << ::std::endl;
+    this->stop();
+    return;
+  }
+  ::std::uint64_t addr = static_cast<::std::uint64_t >(address);
+  const ::std::uint8_t* data = insn_buffer.data();
+  if (auto b = ::cs_disasm_iter(_csh, &data, &size, &addr, _insn); !b) {
+    ::banal::log::cerr() << "Unable to disassemble instruction at 0x"
+                         << ::std::hex << address << ": "
+                         << ::cs_strerror(::cs_errno(_csh)) << ::std::endl;
+    this->stop();
+    return;
+  }
+  ::banal::log::cinfo() << CODE_YELLOW << "[0x" << ::std::hex << address
+                        << "]> " << CODE_RESET << _insn->mnemonic << '\t'
+                        << _insn->op_str << ::std::endl;
 }
 
 } // end namespace execution

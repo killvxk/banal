@@ -28,18 +28,6 @@ struct State {
 
   /// \brief Until
   ::std::uint64_t end;
-
-  /// \brief capstone state
-  struct cs {
-    /// \brief cursor to the code
-    const ::std::uint8_t* cursor;
-
-    /// \brief size of the code
-    ::std::size_t size;
-
-    /// \brief virtual address of the instruction
-    ::std::uint64_t address;
-  } cs;
 };
 
 class Engine {
@@ -92,10 +80,24 @@ private:
   bool load_segment(::banal::binary::component::Segment& segment);
 
 public:
-  /// \brief Emulate one instruction
+  /// \brief Emulate the code
   ///
   /// \return true if success, else false
-  bool step(void);
+  bool emulate(void);
+
+  /// \brief Stop emulation
+  void stop(void);
+
+public:
+  /// \brief Intercept each insn
+  static void hook_insn(::uc_engine* uc,
+                        ::std::uint64_t address,
+                        ::std::uint32_t size,
+                        void* user_data);
+
+private:
+  /// \brief Intercept insn
+  void hook_insn(uintarch_t address, ::std::size_t size);
 };
 
 } // end namespace execution

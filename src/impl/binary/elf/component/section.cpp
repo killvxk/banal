@@ -6,7 +6,7 @@
 ///
 /// Contact: thomas at bailleux.me
 
-#include "banal/binary/elf/component/section.hpp"
+#include "banal/impl/binary/elf/component/section.hpp"
 #include "banal/util/log.hpp"
 
 namespace banal {

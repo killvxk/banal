@@ -103,12 +103,13 @@ public:
   /// \brief Iterator to the first symbol
   ///
   /// \return Iterator to the first symbol
-  virtual ::std::vector< Symbol >::const_iterator symbols_cbegin(void) = 0;
+  virtual ::std::vector< Symbol >::const_iterator symbols_cbegin(
+      void) const = 0;
 
   /// \brief Iterator end of the symbols
   ///
   /// \return Iterator end of the symbols
-  virtual ::std::vector< Symbol >::const_iterator symbols_cend(void) = 0;
+  virtual ::std::vector< Symbol >::const_iterator symbols_cend(void) const = 0;
 };
 
 } // end namespace component

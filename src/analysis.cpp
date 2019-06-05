@@ -185,10 +185,7 @@ void Analysis::start(::std::uint64_t entry) {
   }
 
   // prepare capstone
-  ::cs_insn* insn = ::cs_malloc(_csh);
-  ::cs_free(insn, 1);
-  while (engine.step()) {
-    // dump_registers(_uc, _binary.architecture());
+  if (!engine.emulate()) {
   }
 }
 

@@ -62,10 +62,10 @@ public:
   const ::std::uint8_t* data(void) const override;
 
 public:
-  ::std::vector< Symbol >::const_iterator symbols_cbegin(void) override {
+  ::std::vector< Symbol >::const_iterator symbols_cbegin(void) const override {
     return _symbols.cbegin();
   }
-  ::std::vector< Symbol >::const_iterator symbols_cend(void) override {
+  ::std::vector< Symbol >::const_iterator symbols_cend(void) const override {
     return _symbols.cend();
   }
 };

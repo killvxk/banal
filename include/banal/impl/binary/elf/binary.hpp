@@ -79,6 +79,8 @@ public:
   sections_cbegin(void) const override;
   ::std::vector<::std::unique_ptr< component::Section > >::const_iterator
   sections_cend(void) const override;
+  const ::std::unordered_map< uintarch_t, const component::Symbol& >& symbols(
+      void) const override;
 
 public:
   inline bool nx(void) const override { return _nx; }

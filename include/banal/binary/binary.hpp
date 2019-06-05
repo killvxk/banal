@@ -12,6 +12,7 @@
 #include <istream>
 #include <memory>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 #include "banal/architecture.hpp"
@@ -158,6 +159,12 @@ public:
   virtual ::std::vector<
       ::std::unique_ptr< component::Section > >::const_iterator
   sections_cend(void) const = 0;
+
+  /// \brief Get symbols map
+  ///
+  /// \return Symbols map
+  virtual const ::std::unordered_map< uintarch_t, const component::Symbol& >&
+  symbols(void) const = 0;
 
 public:
   /// \brief Is NX enabled

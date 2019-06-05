@@ -17,7 +17,7 @@
 #include <iostream>
 
 #include "banal/binary/binary.hpp"
-#include "banal/binary/elf/elf.hpp"
+#include "banal/impl/binary/elf/binary.hpp"
 #include "banal/util/log.hpp"
 
 namespace banal {
